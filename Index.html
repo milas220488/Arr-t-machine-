@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Suivi des Arrêts Machine</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --green: #28a745;
+      --red: #dc3545;
+      --orange: #fd7e14;
+      --blue: #007bff;
+      --light-bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #ced4da;
+      --text-color: #212529;
+      --muted: #6c757d;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--light-bg);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--blue);
+      margin-bottom: 25px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      margin-bottom: 15px;
+      font-size: 22px;
+    }
+
+    label {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      font-size: 14px;
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.05), inset -1px -1px 3px rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    input:focus {
+      border-color: var(--blue);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .form-col {
+      flex: 1 1 calc(50% - 10px);
+      min-width: 180px;
+    }
+
+    .chronometre {
+      font-size: 2em;
+      text-align: center;
+      margin: 20px 0;
+      color: var(--blue);
+      font-weight: bold;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.3s ease;
+    }
+
+    .start { background: var(--green); }
+    .start:hover { background: #218838; }
+
+    .stop { background: var(--red); }
+    .stop:hover { background: #c82333; }
+
+    .reset { background: var(--orange); }
+    .reset:hover { background: #e4600e; }
+
+    .export { background: var(--blue); }
+    .export:hover { background: #0056b3; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--blue);
+      color: white;
+    }
+
+    .resume {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Suivi des Arrêts Machine</h1>
+
+  <!-- Partie 1 : Détails Production -->
+  <div class="card">
+    <h2>1. Détails de la Production</h2>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="produit">Nom du Produit</label>
+        <input type="text" id="produit">
+      </div>
+      <div class="form-col">
+        <label for="ordre">Ordre de Fabrication</label>
+        <input type="text" id="ordre">
+      </div>
+      <div class="form-col">
+        <label for="lot">Numéro de Lot</label>
+        <input type="text" id="lot">
+      </div>
+      <div class="form-col">
+        <label for="dateprod">Date Début Production</label>
+        <input type="date" id="dateprod">
+      </div>
+      <div class="form-col">
+        <label for="dlc">DLC</label>
+        <input type="date" id="dlc">
+      </div>
+    </div>
+  </div>
+
+  <!-- Partie 2 : Suivi arrêt -->
+  <div class="card">
+    <h2>2. Suivi de l'Arrêt</h2>
+    <div class="form-row">
+      <div class="form-col" style="flex: 2">
+        <label for="designation">Désignation de l'arrêt</label>
+        <input type="text" id="designation">
+      </div>
+    </div>
+    <div class="chronometre" id="chrono">00:00:00</div>
+    <div class="btn-group">
+      <button class="start" onclick="demarrerChrono()"><i class="fas fa-play"></i>Démarrer</button>
+      <button class="stop" onclick="arreterChrono()"><i class="fas fa-stop"></i>Arrêter</button>
+      <button class="reset" onclick="reinitialiser()"><i class="fas fa-redo"></i>Réinitialiser</button>
+      <button class="export" onclick="exporterPDF()"><i class="fas fa-file-pdf"></i>Exporter PDF</button>
+    </div>
+    <div class="resume" id="resume"></div>
+  </div>
+
+  <!-- Partie 3 : Historique -->  
+  <div class="card">
+    <h2>3. Historique des Arrêts</h2>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Heure Début</th>
+          <th>Heure Fin</th>
+          <th>Temps Écoulé</th>
+          <th>Désignation</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let debut, intervalle, totalSecondes = 0;
+  const tbody = document.querySelector("#table tbody");
+
+  function format(h, m, s) {
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function demarrerChrono() {
+    debut = new Date();
+    intervalle = setInterval(() => {
+      const diff = new Date(new Date() - debut);
+      document.getElementById("chrono").textContent =
+        format(diff.getUTCHours(), diff.getUTCMinutes(), diff.getUTCSeconds());
+    }, 1000);
+  }
+
+  function arreterChrono() {
+    clearInterval(intervalle);
+    const fin = new Date();
+    const diffMs = fin - debut;
+    const diff = new Date(diffMs);
+    const temps = format(diff.getUTCHours(), diff.getUTCMinutes(), diff.getUTCSeconds());
+    totalSecondes += Math.floor(diffMs / 1000);
+    tbody.innerHTML += `<tr>
+      <td>${debut.toLocaleTimeString()}</td>
+      <td>${fin.toLocaleTimeString()}</td>
+      <td>${temps}</td>
+      <td>${document.getElementById("designation").value}</td>
+    </tr>`;
+    document.getElementById("resume").textContent = `Temps total d'arrêt : ${format(Math.floor(totalSecondes/3600), Math.floor(totalSecondes%3600/60), totalSecondes%60)} | Temps restant sur 8h : ${format(Math.floor((28800-totalSecondes)/3600), Math.floor((28800-totalSecondes)%3600/60), (28800-totalSecondes)%60)}`;
+  }
+
+  function reinitialiser() {
+    document.querySelectorAll("input").forEach(i => i.value = "");
+    document.getElementById("chrono").textContent = "00:00:00";
+    tbody.innerHTML = "";
+    totalSecondes = 0;
+    document.getElementById("resume").textContent = "";
+  }
+
+  function exporterPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("Détails de Production", 14, 20);
+    const infos = [
+      ["Nom Produit", document.getElementById("produit").value],
+      ["Ordre Fabrication", document.getElementById("ordre").value],
+      ["Numéro de Lot", document.getElementById("lot").value],
+      ["Date Début", document.getElementById("dateprod").value],
+      ["DLC", document.getElementById("dlc").value]
+    ];
+    doc.autoTable({ startY: 25, head: [["Champ", "Valeur"]], body: infos });
+
+    const data = [...tbody.rows].map(row => [...row.cells].map(cell => cell.textContent));
+    const yHistorique = doc.lastAutoTable.finalY + 20;
+    doc.setFontSize(14);
+    doc.text("Historique des Arrêts", 14, yHistorique);
+    doc.autoTable({
+      startY: yHistorique + 5,
+      head: [["Heure Début", "Heure Fin", "Temps", "Désignation"]],
+      body: data
+    });
+    doc.save("suivi_arrets_machine.pdf");
+  }
+</script>
+</body>
+</html>
